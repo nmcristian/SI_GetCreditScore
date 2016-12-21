@@ -7,6 +7,8 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+import org.bank.credit.web.service.CreditScoreService;
+import org.bank.credit.web.service.CreditScoreService_Service;
 
 public class GetCreditScore {
 
@@ -36,6 +38,14 @@ public class GetCreditScore {
             LoanRequest lr = gson.fromJson(new String(delivery.getBody()), LoanRequest.class);
 
 //            work some more with the attributes being sent to the Credit Bureau = new CPRDTO, then start listening to QUEUE_FROM_CREDIT_BUREAU for message with correlation id = message id just sent
+            int score = getCreditScoreFromWS(lr.getSsn());
+            System.out.println(score);
         }
+    }
+
+    private static int getCreditScoreFromWS(String ssn) {
+        CreditScoreService_Service service = new CreditScoreService_Service();
+        CreditScoreService port = service.getCreditScoreServicePort();
+        return port.creditScore(ssn);
     }
 }
