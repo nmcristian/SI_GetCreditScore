@@ -1,6 +1,7 @@
 package com.nmc.si_getcreditscore;
 
 import com.google.gson.Gson;
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -13,9 +14,7 @@ import org.bank.credit.web.service.CreditScoreService_Service;
 public class GetCreditScore {
 
     private final static String QUEUE_FROM_WS_NAME = "nmc_webserver_to_getcreditscore_queue";
-    private final static String QUEUE_TO_CREDIT_BUREAU = "nmc_getcreditscore_to_creditbureau_queue";
-    private final static String QUEUE_FROM_CREDIT_BUREAU = "nmc_creditbureau_to_getcreditscore_queue";
-    private final static String QUEUE_TO_GET_BANKS = "nmc_getcreditscore_to_getbanks_queue";
+    private final static String EXCHANGE_TO_GET_BANKS = "nmc_getcreditscore_to_getbanks_queue";
     private static final Gson gson = new Gson();
 
     public static void main(String[] argv) throws IOException, TimeoutException, InterruptedException, ClassNotFoundException, Exception {
@@ -34,12 +33,15 @@ public class GetCreditScore {
         while (true) {
             QueueingConsumer.Delivery delivery = consumer_from_ws.nextDelivery();
 
-            System.out.println(" [x] Received from the web app: " + new String(delivery.getBody()));
-            LoanRequest lr = gson.fromJson(new String(delivery.getBody()), LoanRequest.class);
+            LoanRequest loanRequest = gson.fromJson(new String(delivery.getBody()), LoanRequest.class);
+            int score = getCreditScoreFromWS(loanRequest.getSsn());
+            loanRequest.setCreditScore(score);
 
-//            work some more with the attributes being sent to the Credit Bureau = new CPRDTO, then start listening to QUEUE_FROM_CREDIT_BUREAU for message with correlation id = message id just sent
-            int score = getCreditScoreFromWS(lr.getSsn());
-            System.out.println(score);
+            byte[] body = gson.toJson(loanRequest).getBytes();
+            AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties.Builder();
+            builder.correlationId(delivery.getProperties().getCorrelationId());
+
+            channel.basicPublish("", EXCHANGE_TO_GET_BANKS, builder.build(), body);
         }
     }
 
