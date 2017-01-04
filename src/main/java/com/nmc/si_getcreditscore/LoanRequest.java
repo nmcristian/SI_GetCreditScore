@@ -2,7 +2,7 @@ package com.nmc.si_getcreditscore;
 
 public class LoanRequest {
 
-    private final String ssn;
+    private String ssn;
     private final double amount;
     private final Integer duration;
     private Integer creditScore;
@@ -11,6 +11,10 @@ public class LoanRequest {
         this.ssn = ssn;
         this.amount = amount;
         this.duration = duration;
+    }
+    
+    public void removeDashFromSsn() {
+        this.ssn = this.ssn.replaceAll("-", "");
     }
 
     public void setCreditScore(Integer creditScore) {

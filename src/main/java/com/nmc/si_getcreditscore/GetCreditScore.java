@@ -36,6 +36,7 @@ public class GetCreditScore {
             LoanRequest loanRequest = gson.fromJson(new String(delivery.getBody()), LoanRequest.class);
             int score = getCreditScoreFromWS(loanRequest.getSsn());
             loanRequest.setCreditScore(score);
+            loanRequest.removeDashFromSsn();
 
             byte[] body = gson.toJson(loanRequest).getBytes();
             AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties.Builder();
